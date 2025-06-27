@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitAI Mobile - React Native Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(180deg, #101518 0%, #283339 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background: linear-gradient(180deg, #101518 0%, #283339 100%);
+            border-radius: 40px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-bar {
+            height: 44px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .screen {
+            display: none;
+            height: calc(100% - 100px);
+            overflow-y: auto;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .header {
+            padding: 20px 24px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .teal-button {
+            background: #00F19F;
+            color: #101518;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 0 24px 16px;
+        }
+
+        .recovery-ring {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 8px solid #16EC06;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .recovery-score {
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .recovery-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .workout-preview {
+            background: rgba(0, 147, 231, 0.1);
+            border: 1px solid #0093E7;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .macro-rings {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .macro-ring {
+            text-align: center;
+        }
+
+        .ring {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 4px solid;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .protein { border-color: #0093E7; }
+        .carbs { border-color: #00F19F; }
+        .fats { border-color: #FFDE00; }
+
+        .ring-value {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .ring-label {
+            font-size: 10px;
+            color: #888;
+        }
+
+        .bottom-nav {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            border-radius: 12px;
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            background: rgba(0, 241, 159, 0.2);
+            color: #00F19F;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            background: currentColor;
+            mask-size: contain;
+            mask-repeat: no-repeat;
+            mask-position: center;
+        }
+
+        .icon-today { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E"); }
+        .icon-workout { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 24 24'%3E%3Cpath d='M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z'/%3E%3C/svg%3E"); }
+        .icon-nutrition { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 24 24'%3E%3Cpath d='M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.20-1.10-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z'/%3E%3C/svg%3E"); }
+        .icon-supplements { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 24 24'%3E%3Cpath d='M7 2v2h1v14c0 2.21 1.79 4 4 4s4-1.79 4-4V4h1V2H7zm2 2h6v2H9V4zm0 4h6v10c0 1.1-.9 2-2 2s-2-.9-2-2V8z'/%3E%3C/svg%3E"); }
+        .icon-coach { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.5 6L12 10.5 8.5 8 12 5.5 15.5 8zM12 18.5c-1.25 0-2.45-.2-3.57-.57.35-.51 1.17-.93 3.57-.93s3.22.42 3.57.93c-1.12.37-2.32.57-3.57.57z'/%3E%3C/svg%3E"); }
+
+        .screen-selector {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+        }
+
+        .screen-button {
+            padding: 4px 8px;
+            background: rgba(0, 241, 159, 0.2);
+            border: 1px solid #00F19F;
+            border-radius: 12px;
+            color: #00F19F;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .screen-button.active {
+            background: #00F19F;
+            color: #101518;
+        }
+
+        .chat-message {
+            margin: 12px 0;
+            display: flex;
+            gap: 8px;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .ai-message {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-message {
+            background: #00F19F;
+            color: #101518;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .demo-note {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, rgba(16, 21, 24, 0.95) 0%, rgba(40, 51, 57, 0.95) 100%);
+            border: 1px solid rgba(0, 241, 159, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-align: center;
+            color: #00F19F;
+            backdrop-filter: blur(10px);
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="demo-note">
+            F I T A I
+        </div>
+
+        <div class="screen-selector">
+            <button class="screen-button active" onclick="showScreen('today')">Today</button>
+            <button class="screen-button" onclick="showScreen('workouts')">Workouts</button>
+            <button class="screen-button" onclick="showScreen('nutrition')">Nutrition</button>
+            <button class="screen-button" onclick="showScreen('supplements')">Supplements</button>
+            <button class="screen-button" onclick="showScreen('chat')">AI Coach</button>
+        </div>
+
+        <div class="status-bar">
+            <span>9:41</span>
+            <span>100%</span>
+        </div>
+
+        <!-- Today Screen -->
+        <div class="screen active" id="today">
+            <div class="header">
+                <div class="title">Today</div>
+                <button class="teal-button">Sync</button>
+            </div>
+
+            <div class="card">
+                <div class="recovery-ring">
+                    <div class="recovery-score">--</div>
+                    <div class="recovery-label">Recovery</div>
+                </div>
+                <div style="text-align: center; color: #888; font-weight: bold; font-size: 12px; margin-top: 8px;">
+                    Connect wearable device for recovery data
+                </div>
+                <button style="background: #00F19F; color: #101518; border: none; padding: 8px 16px; border-radius: 20px; font-size: 12px; margin-top: 8px; font-weight: bold;">
+                    Connect Device
+                </button>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">Today's Workout</h3>
+                <div class="workout-preview">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; margin-bottom: 4px;">Upper Body Strength</div>
+                            <div style="font-size: 12px; color: #888;">45 min • Moderate</div>
+                        </div>
+                        <button class="teal-button">Start</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">Nutrition Progress</h3>
+                <div style="text-align: center; margin-bottom: 16px;">
+                    <div style="font-size: 24px; font-weight: bold;">1,240</div>
+                    <div style="font-size: 12px; color: #888;">of 2,100 calories</div>
+                </div>
+                <div class="macro-rings">
+                    <div class="macro-ring">
+                        <div class="ring protein">
+                            <div class="ring-value">85g</div>
+                        </div>
+                        <div class="ring-label">Protein</div>
+                    </div>
+                    <div class="macro-ring">
+                        <div class="ring carbs">
+                            <div class="ring-value">120g</div>
+                        </div>
+                        <div class="ring-label">Carbs</div>
+                    </div>
+                    <div class="macro-ring">
+                        <div class="ring fats">
+                            <div class="ring-value">45g</div>
+                        </div>
+                        <div class="ring-label">Fats</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nutrition Screen -->
+        <div class="screen" id="nutrition">
+            <div class="header">
+                <div class="title">Nutrition</div>
+                <button class="teal-button">📷</button>
+            </div>
+
+            <div class="card">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 32px; font-weight: bold; margin-bottom: 4px;">1,240</div>
+                    <div style="font-size: 14px; color: #888;">calories</div>
+                    <div style="font-size: 12px; color: #888; margin-top: 2px;">/2,100</div>
+                </div>
+                
+                <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 20px;">
+                    <div style="width: 59%; height: 8px; background: #00F19F; border-radius: 4px;"></div>
+                </div>
+
+                <div class="macro-rings">
+                    <div class="macro-ring">
+                        <div class="ring protein">
+                            <div class="ring-value">85g</div>
+                        </div>
+                        <div class="ring-label">Protein</div>
+                        <div style="font-size: 8px; color: #888;">/150g</div>
+                    </div>
+                    <div class="macro-ring">
+                        <div class="ring carbs">
+                            <div class="ring-value">120g</div>
+                        </div>
+                        <div class="ring-label">Carbs</div>
+                        <div style="font-size: 8px; color: #888;">/250g</div>
+                    </div>
+                    <div class="macro-ring">
+                        <div class="ring fats">
+                            <div class="ring-value">45g</div>
+                        </div>
+                        <div class="ring-label">Fats</div>
+                        <div style="font-size: 8px; color: #888;">/70g</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">Today's Food Log</h3>
+                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <div style="font-weight: bold;">Greek Yogurt</div>
+                        <div style="font-size: 12px;">130 cal</div>
+                    </div>
+                    <div style="font-size: 12px; color: #888;">Chobani • 170g • 8:30 AM</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <div style="font-weight: bold;">Chicken Breast</div>
+                        <div style="font-size: 12px;">165 cal</div>
+                    </div>
+                    <div style="font-size: 12px; color: #888;">100g • 12:30 PM</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workouts Screen -->
+        <div class="screen" id="workouts">
+            <div class="header">
+                <div class="title">Workouts</div>
+                <button class="teal-button">+ New</button>
+            </div>
+            
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">This Week</h3>
+                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <div style="flex: 1; text-align: center; padding: 8px; background: rgba(0,241,159,0.1); border-radius: 8px;">
+                        <div style="font-size: 12px; color: #888;">MON</div>
+                        <div style="font-size: 10px; margin-top: 4px; color: #00F19F;">Upper</div>
+                    </div>
+                    <div style="flex: 1; text-align: center; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        <div style="font-size: 12px; color: #888;">TUE</div>
+                        <div style="font-size: 10px; margin-top: 4px; color: #0093E7;">Lower</div>
+                    </div>
+                    <div style="flex: 1; text-align: center; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div style="font-size: 12px; color: #888;">WED</div>
+                        <div style="font-size: 10px; margin-top: 4px; color: #888;">Rest</div>
+                    </div>
+                    <div style="flex: 1; text-align: center; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        <div style="font-size: 12px; color: #888;">THU</div>
+                        <div style="font-size: 10px; margin-top: 4px; color: #FFDE00;">Cardio</div>
+                    </div>
+                    <div style="flex: 1; text-align: center; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        <div style="font-size: 12px; color: #888;">FRI</div>
+                        <div style="font-size: 10px; margin-top: 4px; color: #00F19F;">Full</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 12px;">Recent Workouts</h3>
+                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <div style="font-weight: bold;">Push Day</div>
+                        <div style="font-size: 12px; color: #16EC06;">Completed</div>
+                    </div>
+                    <div style="font-size: 12px; color: #888;">Yesterday • 45 min</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <div style="font-weight: bold;">HIIT Cardio</div>
+                        <div style="font-size: 12px; color: #16EC06;">Completed</div>
+                    </div>
+                    <div style="font-size: 12px; color: #888;">2 days ago • 30 min</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supplements Screen -->
+        <div class="screen" id="supplements">
+            <div class="header">
+                <div class="title">Supplements</div>
+                <button class="teal-button">+ Add</button>
+            </div>
+            
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">Today's Progress</h3>
+                <div style="text-align: center; margin-bottom: 16px;">
+                    <div style="font-size: 24px; font-weight: bold; color: #16EC06;">75%</div>
+                    <div style="font-size: 12px; color: #888;">Adherence Rate</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 12px;">Your Supplements</h3>
+                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #0093E7;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold;">Vitamin D3</div>
+                            <div style="font-size: 12px; color: #888;">2000 IU • Daily</div>
+                        </div>
+                        <div style="width: 20px; height: 20px; background: #16EC06; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #101518; font-size: 12px;">✓</div>
+                    </div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #00F19F;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold;">Whey Protein</div>
+                            <div style="font-size: 12px; color: #888;">25g • 2x Daily</div>
+                        </div>
+                        <div style="width: 20px; height: 20px; background: rgba(255,255,255,0.2); border: 2px solid #888; border-radius: 10px;"></div>
+                    </div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border-left: 4px solid #FFDE00;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold;">Omega-3</div>
+                            <div style="font-size: 12px; color: #888;">1000mg • Daily</div>
+                        </div>
+                        <div style="width: 20px; height: 20px; background: #16EC06; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #101518; font-size: 12px;">✓</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Screen -->
+        <div class="screen" id="chat">
+            <div class="header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 32px; height: 32px; background: #00F19F; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #101518; font-weight: bold;">AI</div>
+                    <div>
+                        <div class="title" style="font-size: 18px;">AI Coach</div>
+                        <div style="font-size: 12px; color: #888;">Online</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="padding: 0 24px; height: calc(100% - 140px); overflow-y: auto;">
+                <div class="chat-message">
+                    <div style="width: 24px; height: 24px; background: #00F19F; border-radius: 12px; flex-shrink: 0;"></div>
+                    <div class="message-bubble ai-message">
+                        Hi! I'm your AI fitness coach. I'm here to help you with workouts, nutrition, recovery, and any fitness questions you have. What would you like to work on today?
+                    </div>
+                </div>
+
+                <div class="chat-message">
+                    <div class="message-bubble user-message">
+                        Can you create a workout plan for today?
+                    </div>
+                </div>
+
+                <div class="chat-message">
+                    <div style="width: 24px; height: 24px; background: #00F19F; border-radius: 12px; flex-shrink: 0;"></div>
+                    <div class="message-bubble ai-message">
+                        Based on your recovery score of 89 and today being an upper body day, I'll create a strength-focused workout:
+
+                        🏋️ Upper Body Strength (45 min)
+                        • Bench Press: 4x6-8
+                        • Pull-ups: 4x8-10
+                        • Overhead Press: 3x8-10
+                        • Barbell Rows: 3x8-10
+
+                        Your high recovery allows for moderate intensity. Ready to start?
+                    </div>
+                </div>
+            </div>
+
+            <div style="position: absolute; bottom: 80px; left: 24px; right: 24px;">
+                <div style="background: rgba(255,255,255,0.1); border-radius: 24px; padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+                    <input type="text" placeholder="Ask me anything about fitness..." style="flex: 1; background: none; border: none; color: white; outline: none;">
+                    <button style="width: 32px; height: 32px; background: #00F19F; border: none; border-radius: 16px; color: #101518;">→</button>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchToScreen('today', this)">
+                <div class="nav-icon icon-today"></div>
+                <span>Today</span>
+            </button>
+            <button class="nav-item" onclick="switchToScreen('workouts', this)">
+                <div class="nav-icon icon-workout"></div>
+                <span>Workouts</span>
+            </button>
+            <button class="nav-item" onclick="switchToScreen('nutrition', this)">
+                <div class="nav-icon icon-nutrition"></div>
+                <span>Nutrition</span>
+            </button>
+            <button class="nav-item" onclick="switchToScreen('supplements', this)">
+                <div class="nav-icon icon-supplements"></div>
+                <span>Supplements</span>
+            </button>
+            <button class="nav-item" onclick="switchToScreen('chat', this)">
+                <div class="nav-icon icon-coach"></div>
+                <span>Coach</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        function showScreen(screenName) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Show selected screen
+            const targetScreen = document.getElementById(screenName);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+            }
+            
+            // Update screen selector buttons
+            document.querySelectorAll('.screen-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Find and activate the correct screen button
+            const buttons = document.querySelectorAll('.screen-button');
+            buttons.forEach(btn => {
+                if (btn.textContent.toLowerCase() === screenName.toLowerCase() || 
+                    (screenName === 'chat' && btn.textContent.toLowerCase() === 'ai coach')) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function setActiveNav(element) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            if (element) {
+                element.classList.add('active');
+            }
+        }
+
+        function switchToScreen(screenName, navElement) {
+            showScreen(screenName);
+            if (navElement) {
+                setActiveNav(navElement);
+            }
+        }
+    </script>
+</body>
+</html>
